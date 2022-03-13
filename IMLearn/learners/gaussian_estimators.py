@@ -1,6 +1,5 @@
 from __future__ import annotations
 import numpy as np
-import scipy.stats
 from numpy.linalg import inv, det, slogdet
 
 
@@ -80,7 +79,8 @@ class UnivariateGaussian:
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
 
-        return scipy.stats.norm(self.mu_, self.var_).pdf(X)
+        res = (1.0 / (self.var_ * np.sqrt(2 * np.pi)))
+        return res * np.exp(-0.5 * np.power((X - self.mu_) / self.var_, 2))
 
     @staticmethod
     def log_likelihood(mu: float, sigma: float, X: np.ndarray) -> float:
@@ -101,8 +101,11 @@ class UnivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        sample_pdfs = scipy.stats.norm(mu, sigma).pdf(X)
-        return np.log(np.prod(sample_pdfs))
+        m = X.size
+        sigma_sq = np.power(sigma, 2)
+        centered_sample = X - mu
+        res = m * np.log(2 * np.pi) + m * np.log(sigma_sq) + (1.0 / sigma_sq) * np.sum(np.power(centered_sample, 2))
+        return - 0.5 * res
 
 
 class MultivariateGaussian:
@@ -178,7 +181,11 @@ class MultivariateGaussian:
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
 
-        return scipy.stats.multivariate_normal.pdf(X, mean=self.mu_, cov=self.cov_)
+        _, d = X.shape
+        centered_mat = X - self.mu_
+        cov_inv = inv(self.cov_)
+        res = -0.5 * np.apply_along_axis(lambda sample: (sample.T.dot(cov_inv)).dot(sample), 1, centered_mat)
+        return (1 / np.sqrt(np.power(2 * np.pi, d) * det(self.cov_))) * np.exp(res)
 
     @staticmethod
     def log_likelihood(mu: np.ndarray, cov: np.ndarray, X: np.ndarray) -> float:
