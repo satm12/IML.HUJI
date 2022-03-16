@@ -155,7 +155,7 @@ class MultivariateGaussian:
         m = X.shape[0]
         self.mu_ = np.average(X, axis=0)
         centered_mat = X - self.mu_
-        self.cov_ = (1.0 / (m + 1)) * centered_mat.transpose().dot(centered_mat)
+        self.cov_ = (1.0 / (m - 1)) * centered_mat.T.dot(centered_mat)
 
         self.fitted_ = True
         return self
