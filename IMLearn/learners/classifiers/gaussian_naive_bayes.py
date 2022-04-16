@@ -1,6 +1,9 @@
 from typing import NoReturn
 from ...base import BaseEstimator
 import numpy as np
+from ...metrics import misclassification_error
+from scipy.stats import multivariate_normal
+
 
 class GaussianNaiveBayes(BaseEstimator):
     """
@@ -39,7 +42,16 @@ class GaussianNaiveBayes(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        raise NotImplementedError()
+        m, n = X.shape
+        self.classes_ = np.unique(y)
+        nk = np.array([np.sum(y == k) for k in self.classes_])
+        self.pi_ = nk / m
+        self.mu_ = np.array([sum(X[y == k]) for k in self.classes_]) / nk[:, np.newaxis]
+
+        self.vars_ = np.zeros((self.classes_.size, n))
+        for k in self.classes_:
+            X_k = X[y == k]
+            self.vars_[k] = X_k.var(axis=0)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -55,7 +67,8 @@ class GaussianNaiveBayes(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+
+        return self.classes_[np.argmax(self.likelihood(X), axis=0)]
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """
@@ -75,7 +88,8 @@ class GaussianNaiveBayes(BaseEstimator):
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
 
-        raise NotImplementedError()
+        return np.array([multivariate_normal.pdf(X, mean=self.mu_[k], cov=np.diag(self.vars_[k])) * self.pi_[k]
+                         for k in self.classes_])
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -94,5 +108,6 @@ class GaussianNaiveBayes(BaseEstimator):
         loss : float
             Performance under missclassification loss function
         """
-        from ...metrics import misclassification_error
-        raise NotImplementedError()
+        y_pred = self.predict(X)
+        return misclassification_error(y, y_pred)
+
