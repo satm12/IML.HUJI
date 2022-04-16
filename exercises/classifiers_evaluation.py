@@ -111,7 +111,7 @@ def compare_gaussian_classifiers():
             .add_traces([go.Scatter(x=X[:, 0], y=X[:, 1],
                                     mode="markers", showlegend=False,
                                     marker=dict(color=lda_pred, symbol=y,
-                                                size=10,
+                                                size=15,
                                                 line=dict(color="black", width=2),
                                                 colorscale=[custom[0], custom[-1]]
                                                 ))
