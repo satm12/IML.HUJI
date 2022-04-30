@@ -75,7 +75,7 @@ class Perceptron(BaseEstimator):
         Fits model with or without an intercept depending on value of `self.fit_intercept_`
         """
         X = self._preprocess(X)
-        m, n = X.shape
+        m, n = X.shape if X.ndim > 1 else (X.size, 1)
         self.coefs_ = np.zeros(n)
         for _ in range(self.max_iter_):
             sample_sep = y * X.dot(self.coefs_)

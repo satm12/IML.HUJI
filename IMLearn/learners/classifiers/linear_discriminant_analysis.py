@@ -48,7 +48,7 @@ class LDA(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        m, n = X.shape
+        m, n = X.shape if X.ndim > 1 else (X.size, 1)
         self.classes_ = np.unique(y)
         nk = np.array([np.sum(y == k) for k in self.classes_])
         self.pi_ = nk / m
