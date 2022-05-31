@@ -99,16 +99,80 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
         Number of regularization parameter values to evaluate for each of the algorithms
     """
     # Question 6 - Load diabetes dataset and split into training and testing portions
-    raise NotImplementedError()
+    data = datasets.load_diabetes(as_frame=True).frame
+    train, test = data.iloc[:n_samples], data.iloc[n_samples:]
+    train_X, train_y = train.drop(columns='target'), train['target']
+    test_X, test_y = test.drop(columns='target'), test['target']
 
     # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
-    raise NotImplementedError()
+    results = []
+    for lam in np.linspace(0, 10, n_evaluations + 1)[1:]:
+        ridge_model = RidgeRegression(lam=lam, include_intercept=True)
+        lasso_model = Lasso(alpha=lam)
+        ridge_train_score, ridge_val_score = cross_validate(ridge_model, train_X, train_y, mean_square_error)
+        lasso_train_score, lasso_vali_score = cross_validate(lasso_model, train_X.to_numpy(), train_y.to_numpy(), mean_square_error)
+        results.append([lam, ridge_train_score, ridge_val_score, lasso_train_score, lasso_vali_score])
+    result_data = pd.DataFrame(results, columns=['lam', 'ridge_train', 'ridge_val', 'lasso_train', 'lasso_val'])
+
+    fig = go.Figure(data=[go.Scatter(x=result_data['lam'],
+                                     y=result_data['ridge_train'],
+                                     name='Ridge Train',
+                                     mode="lines",
+                                     line=dict(
+                                         color='darkblue'
+                                     )),
+                          go.Scatter(x=result_data['lam'],
+                                     y=result_data['ridge_val'],
+                                     name='Ridge Validation',
+                                     mode="lines",
+                                     line=dict(
+                                         color='blue'
+                                     )),
+                          go.Scatter(x=result_data['lam'],
+                                     y=result_data['lasso_train'],
+                                     name='Lasso Train',
+                                     mode="lines",
+                                     line=dict(
+                                         color='darkred'
+                                     )),
+                          go.Scatter(x=result_data['lam'],
+                                     y=result_data['lasso_val'],
+                                     name='Lasso Validation',
+                                     mode="lines",
+                                     line=dict(
+                                         color='red'
+                                     ))
+                          ],
+                    layout=dict(
+                        title=rf"$\textbf{{Ridge/Lasso Corss Validation Scores}}$",
+                        xaxis={"title": 'Lambda'},
+                        yaxis={"title": 'Loss'},
+                    ))
+    fig.show()
 
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
-    raise NotImplementedError()
+    opt_lam_ridge = result_data.loc[result_data['ridge_val'].idxmin()]['lam']
+    opt_lam_lasso = result_data.loc[result_data['lasso_val'].idxmin()]['lam']
+    print(f'Optimal Ridge Parameter: {opt_lam_ridge}\nOptimal Lasso Parameter: {opt_lam_lasso}')
+
+    lin_model = LinearRegression(include_intercept=True)
+    lin_model.fit(train_X.to_numpy(), train_y.to_numpy())
+    lin_error = mean_square_error(lin_model.predict(test_X.to_numpy()), test_y.to_numpy())
+
+    ridge_model = RidgeRegression(lam=opt_lam_ridge, include_intercept=True)
+    ridge_model.fit(train_X.to_numpy(), train_y.to_numpy())
+    ridge_error = mean_square_error(ridge_model.predict(test_X.to_numpy()), test_y.to_numpy())
+
+    lasso_model = Lasso(alpha=opt_lam_lasso)
+    lasso_model.fit(train_X.to_numpy(), train_y.to_numpy())
+    lasso_error = mean_square_error(lasso_model.predict(test_X.to_numpy()), test_y.to_numpy())
+
+    print(f'Linear Error Error: {lin_error}\nRidge Error: {ridge_error}\nLasso Error: {lasso_error:}')
 
 
 if __name__ == '__main__':
     np.random.seed(0)
     select_polynomial_degree()
+    select_polynomial_degree(100, 0)
     select_polynomial_degree(1500, 10)
+    select_regularization_parameter()

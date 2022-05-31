@@ -45,7 +45,8 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
         train_X = np.concatenate(np.delete(X_split, i, axis=0))
         train_y = np.concatenate(np.delete(y_split, i, axis=0))
         validation_X, validation_y = X_split[i], y_split[i]
-        y_train_pred = estimator.fit_predict(train_X, train_y)
+        estimator.fit(train_X, train_y)
+        y_train_pred = estimator.predict(train_X)
         y_validation_pred = estimator.predict(validation_X)
         train_scores.append(scoring(y_train_pred, train_y))
         validation_scores.append(scoring(y_validation_pred, validation_y))
